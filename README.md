@@ -25,7 +25,7 @@ Additionally, you can now check the `sorted-in.txt` file. It contains the sorted
 > * `"column1_name"` and `"column2_name"` are `column arguments`. They can contain small letters, digits and `'_'` symbols. They represent the column name of the table, and will be assigned an INTEGER data type in the table. <br>
 > * `"ForeignTableName_id"` is a `foreign key argument`. These arguments must end with an `"_id"` suffix. They must be capitalized and can contain small and capital letters, as well as digits, same as for `table name argument`. The part before the `"_id"` should reference a table name. After the SQL is generated, the table (`Table1Name`) will have a foreign key `foreigntablename_id` pointing to a column `foreigntablename_id` of the `ForeignTableName` table. <br>
 
-***Note before using (rules and logging):***
+***Note before using:***
 >  * If `table name argument` isn't capitalized, the script will do it
 > automatically. Also, it will remove any `'_'` characters from it as well.<br>
 >  * If `column argument` contains any capital letters, running the script

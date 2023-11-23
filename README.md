@@ -11,7 +11,7 @@
 
 ### After running:
 The `main.py` script will create `sorted-in.txt`, `create-db.sql` and `log.txt` file in the root folder.<br>
-Navigate to the `sorted-in.txt` file to view the newly generated SQL. <br>
+Navigate to the `create-db.sql` file to view the newly generated SQL. <br>
 Additionally, you can now check the `sorted-in.txt` file. It contains the sorted contents of the `in.txt` file.
 
 ***Note before using:***

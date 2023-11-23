@@ -1,5 +1,5 @@
 # Generate SQL for creating SQLite tables
-
+Promena OVDE
 ### How to run:
 1. Clone this repo.
 2. Navigate to the root folder and in it, create the `in.txt` file. 

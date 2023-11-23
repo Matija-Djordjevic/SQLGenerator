@@ -17,7 +17,7 @@ Additionally, you can now check the `sorted-in.txt` file. It contains the sorted
 
 ### Schema for `in.txt`
 
->  argument1 argument2 argument3 ... argumentN
+> druga linija
 >  
 >  `Table1Name column1_name ForeignTableName_id column2_name`
 >  

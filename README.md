@@ -17,8 +17,7 @@ Additionally, you can now check the `sorted-in.txt` file. It contains the sorted
 
 ### Schema for `in.txt`
 Xs
-> sdadasdasd
-> sadadas
+
 
 > * `"Table1Name"` is a `table name argument`. Every line must start with one and contain only one. These arguments must be capitalized and can contain small and capital letters, as well as digits. <br>
 > * `"column1_name"` and `"column2_name"` are `column arguments`. They can contain small letters, digits and `'_'` symbols. They represent the column name of the table, and will be assigned an INTEGER data type in the table. <br>

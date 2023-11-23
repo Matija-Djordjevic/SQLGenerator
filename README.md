@@ -1,14 +1,16 @@
 # Generate SQL for creating SQLite tables
 
 ### How to run:
-1. Fill in the `in.txt` file. One line represents one table.
-	Example of the `in.txt` file:
+1. Clone this repo.
+2. Navigate to the root folder and in it, create the `in.txt` file. 
+3. Fill in the `in.txt` file. One line represents one table.
+	Example:
 	> TableName1 column_name1 colum_name2 <br>
 	> TableName2 column_name1 colum_name2 column_name3
-2. Run `main.py`.
+4. Run `main.py`.
 
 ### After running:
-The `main.py` script will create `sorted-in.txt`, `create-db.sql` and `log.txt` file.<br>
+The `main.py` script will create `sorted-in.txt`, `create-db.sql` and `log.txt` file in the root folder.<br>
 Navigate to the `sorted-in.txt` file to view the newly generated SQL. <br>
 Additionally, you can now check the `sorted-in.txt` file. It contains the sorted contents of the `in.txt` file.
 

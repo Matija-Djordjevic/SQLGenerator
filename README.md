@@ -3,7 +3,7 @@
 ### How to run:
 1. Clone this repo.
 2. Navigate to the root folder and in it, create the `in.txt` file. 
-3. Fill in the `in.txt` file. One line represents one table.
+3. Fill in the `in.txt` file. One line represents one table. <br>
 	Example:
 	> TableName1 column_name1 colum_name2 <br>
 	> TableName2 column_name1 colum_name2 column_name3

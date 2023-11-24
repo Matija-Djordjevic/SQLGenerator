@@ -56,14 +56,14 @@ if __name__=="__main__":
         
         # let us check and fix column/foreign key arguments
         for (ind, column_name) in enumerate(columns):
-            IS_KEY = ah.is_foreign_key_arg(column_name)
-            LOG_FUNCT = ah.log_foreign_key_errs_if_any if IS_KEY else ah.log_column_errs_if_any
+            is_key = ah.is_foreign_key_arg(column_name)
+            log_funct = ah.log_foreign_key_errs_if_any if is_key else ah.log_column_errs_if_any
             
-            FIXED_NAME = LOG_FUNCT(column_name, log_file, ind)
+            fixed_name = log_funct(column_name, log_file, ind)
 
-            if FIXED_NAME != column_name:
+            if fixed_name != column_name:
                 naming_errs_occured = True
-                columns[ind] = FIXED_NAME
+                columns[ind] = fixed_name
 
         # section that writes SQL
         sorted_in_file.write(table_name + (" " if columns != [] else ""))

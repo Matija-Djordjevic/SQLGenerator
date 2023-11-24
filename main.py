@@ -54,6 +54,8 @@ if __name__=="__main__":
         # columns that end with _id last, rest sorted by alpha order
         columns = sorted(columns, key = lambda x : chr(sys.maxunicode) if x.endswith("_id") else x)
         
+        prims_and_comps = list(filter(ah.is_primary_or_composite_key, columns))
+
         # let us check and fix column/foreign key arguments
         for (ind, column_name) in enumerate(columns):
             is_key = ah.is_foreign_key_arg(column_name)
@@ -68,24 +70,31 @@ if __name__=="__main__":
         # section that writes SQL
         sorted_in_file.write(table_name + (" " if columns != [] else ""))
         sorted_in_file.write(" ".join(columns) + "\n")
-        
+
         sql_out_file.write(f"CREATE TABLE {table_name} (\n")
-        sql_out_file.write(f"    {table_name.lower()}_id INTEGER PRIMARY KEY AUTOINCREMENT,\n")
+
+
+        if not len(prims_and_comps) >= 1:
+            sql_out_file.write(f"    {table_name.lower()}_id INTEGER PRIMARY KEY AUTOINCREMENT,\n")
+
         sql_out_file.write("    created TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,\n")
-        sql_out_file.write("    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP")
-        sql_out_file.write("\n" if len(columns) == 0 else ",\n")
-        
+        sql_out_file.write("    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,")
+
+        sql_out_file.write("\n" if len(columns) == 0 or len(prims_and_comps) >= 1 else ",\n")
+
         are_any_args_foreign = len(list(filter(ah.is_foreign_key_arg, columns))) >= 1
         
         # we do not filter out foreign keys because they need to be present as a column names as well
         for ind, column_name in enumerate(columns):
             sql_out_file.write(f"    {column_name.lower()} INTEGER NOT NULL")
+
             if are_any_args_foreign or ind != len(columns) - 1:
                 sql_out_file.write(",")
 
             sql_out_file.write("\n")
-
-        foreign_keys = list(filter(lambda x: x.endswith("_id"), columns))
+        
+        # SQL for composite keys
+        foreign_keys = list(filter(ah., columns))
         for ind, foreign_key in enumerate(foreign_keys):
             foreign_table_name  = foreign_key[:-3]
             foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
@@ -97,6 +106,12 @@ if __name__=="__main__":
                 sql_out_file.write(",")
 
             sql_out_file.write("\n")
+        
+
+        # now lets wirte primary or composite keys if user defined any 
+        if (len(prims_and_comps) >= 1):
+            sql_out_file.write(f"    PRIMARY KEY ({", ".join(map(lambda x: x[3: ], prims_and_comps))})\n")
+
 
         # end of SQL writing
         sql_out_file.write(");\n")

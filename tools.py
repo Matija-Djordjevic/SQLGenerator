@@ -33,17 +33,26 @@ class ArgsHandler():
     @staticmethod
     def is_valid_foreign_key_arg(foreign_key: str):
         return foreign_key[0].isupper() and "_" not in foreign_key[:-3]
-
+    
     @staticmethod
-    def is_foreign_key_arg(foreign_key: str):
-        return foreign_key.endswith("_id")
-
+    def is_valid_primary_or_composite_key(composite_key: str):
+        return True
+    
     @staticmethod
     def is_valid_column_name_arg(column_name: str):
         return column_name.islower()
 
     @staticmethod
+    def is_foreign_key_arg(foreign_key: str):
+        return foreign_key.endswith("_id") and foreign_key != "key_id"
+
+    @staticmethod
+    def is_primary_or_composite_key(key_name: str):
+        return key_name != "key_id" and key_name.startswith("key") and len(key_name) > 3
+
+    @staticmethod
     def log_foreign_key_errs_if_any(key_name: str, log_file, line_ind= 0) -> str:
+        """ Also fixes the name and returns it """
         fixed_name = key_name
         if not ArgsHandler.is_valid_foreign_key_arg(key_name):
             ArgsHandler.display_foreign_key_errs(key_name, end="\n", show_msg=True)
@@ -52,17 +61,24 @@ class ArgsHandler():
             log_file.write(f"{fixed_name}\n")
 
         return fixed_name
+    
+    @staticmethod
+    def log_primary_or_composite_key_errs(key_name: str, log_file, line_ind= 0) -> str:
+        fixed_name = key_name
+
+        return fixed_name
 
     @staticmethod
     def log_column_errs_if_any(column_name: str, log_file, line_ind= 0) -> str:
-        fixedName = column_name
+        """ Also fixes the name and returns it """
+        fixed_name = column_name
         if not ArgsHandler.is_valid_column_name_arg(column_name):
             ArgsHandler.display_column_errs(column_name, end="\n", show_msg=True)
             log_file.write(f"    Line {int(line_ind)} ('in.txt'): Fixed column name: {column_name} -> ")
-            fixedName = ArgsHandler.fix_column_name_arg(column_name)
+            fixed_name = ArgsHandler.fix_column_name_arg(column_name)
             log_file.write(f"{column_name}\n")
 
-        return fixedName
+        return fixed_name
 
     @staticmethod
     def fix_column_name_arg(column_name: str) -> str:

@@ -1,4 +1,8 @@
 class ArgsHandler():
+    """
+    Handle arguments that represent table names, column names and foreign key naems.
+    Fix them, print their invalid characters or validate them.
+    """
     class TermColors:
         FAIL = '\033[91m'
         ENDC = '\033[0m'
@@ -6,83 +10,98 @@ class ArgsHandler():
 
     invalidArgs = [" created ", " modified "]
 
-    def printValidChar(c, isInvalid = False):
-        if isInvalid:
+    @staticmethod
+    def print_char(c, is_invalid = False):
+        if is_invalid:
             print(f"{ArgsHandler.TermColors.FAIL}{ArgsHandler.TermColors.BOLD}{c}{ArgsHandler.TermColors.ENDC}", end="")
         else:
             print(c, end="")
 
-    def strContainsInvArgs(str):
+    @staticmethod
+    def contains_invalid_args(args: str):
+        """" Samo da mu bude malo lakse """
         for iArg in ArgsHandler.invalidArgs:
-            if iArg in str:
+            if iArg in args:
                 return True
             
         return False
     
-    def isValidTableNameArg(str):
-        return str[0].isupper() and "_" not in str
+    @staticmethod
+    def is_valid_table_name(table_name: str):
+        return table_name[0].isupper() and "_" not in table_name
 
-    def isValidForeignKeyArg(str):
-        return str[0].isupper() and "_" not in str[:-3]
+    @staticmethod
+    def is_valid_foreign_key_arg(foreign_key: str):
+        return foreign_key[0].isupper() and "_" not in foreign_key[:-3]
 
-    def isForeignKeyArg(str):
-        return str.endswith("_id")
+    @staticmethod
+    def is_foreign_key_arg(foreign_key: str):
+        return foreign_key.endswith("_id")
 
-    def isValidColumnNameArg(str):
-        return str.islower()
+    @staticmethod
+    def is_valid_column_name_arg(column_name: str):
+        return column_name.islower()
 
-    def fixTableNameArg(str):
-        return str.replace("_", "").capitalize()
+    @staticmethod
+    def log_foreign_key_errs_if_any(key_name: str, log_file, line_ind= 0) -> str:
+        fixed_name = key_name
+        if not ArgsHandler.is_valid_foreign_key_arg(key_name):
+            ArgsHandler.display_foreign_key_errs(key_name, end="\n", show_msg=True)
+            log_file.write(f"    Line {int(line_ind)} ('in.txt'): Fixed foreign key name: {key_name} -> ")
+            fixed_name = ArgsHandler.fix_foreign_key_arg(key_name)
+            log_file.write(f"{fixed_name}\n")
 
-    def logForeignKeyErrsIfAny(keyName, logFile, lineInd=""):
-        fixedName = keyName
-        if not ArgsHandler.isValidForeignKeyArg(keyName):
-            ArgsHandler.displayForeignKeyErrs(keyName, end="\n", showMsg=True)
-            logFile.write(f"    Line {lineInd} ('in.txt'): Fixed foreign key name: {keyName} -> ")
-            fixedName = ArgsHandler.fixForeignKeyArg(keyName)
-            logFile.write(f"{fixedName}\n")
+        return fixed_name
+
+    @staticmethod
+    def log_column_errs_if_any(column_name: str, log_file, line_ind= 0) -> str:
+        fixedName = column_name
+        if not ArgsHandler.is_valid_column_name_arg(column_name):
+            ArgsHandler.display_column_errs(column_name, end="\n", show_msg=True)
+            log_file.write(f"    Line {int(line_ind)} ('in.txt'): Fixed column name: {column_name} -> ")
+            fixedName = ArgsHandler.fix_column_name_arg(column_name)
+            log_file.write(f"{column_name}\n")
 
         return fixedName
 
-    def logColumnErrsIfAny(columnName, logFile, lineInd=""):
-        fixedName = columnName
-        if not ArgsHandler.isValidColumnNameArg(columnName):
-            ArgsHandler.displayColumnErrs(columnName, end="\n", showMsg=True)
-            logFile.write(f"    Line {lineInd} ('in.txt'): Fixed column name: {columnName} -> ")
-            fixedName = ArgsHandler.fixColumnNameArg(columnName)
-            logFile.write(f"{columnName}\n")
+    @staticmethod
+    def fix_column_name_arg(column_name: str) -> str:
+        return column_name.lower()
 
-        return fixedName
+    @staticmethod
+    def fix_foreign_key_arg(foreign_key: str) -> str:
+        return ArgsHandler.fix_table_name_arg(foreign_key[:-3]) + "_id"
 
-    def fixColumnNameArg(str):
-        return str.lower()
-
-    def fixForeignKeyArg(str):
-        return ArgsHandler.fixTableNameArg(str[:-3]) + "_id"
-
-    def displayTableNameErrs(str, end="", showMsg = False):
-        if showMsg:
+    @staticmethod
+    def fix_table_name_arg(table_name: str) -> str:
+        return table_name.replace("_", "").capitalize()
+    
+    @staticmethod
+    def display_table_name_errs(table_name: str, end="", show_msg = False):
+        if show_msg:
             print("Invalid table name: ", end="")
 
-        for ind, c in enumerate(str):
-            ArgsHandler.printValidChar(c, isInvalid = (c == "_" or ind == 0 and c.islower()))
+        for ind, c in enumerate(table_name):
+            ArgsHandler.print_char(c, is_invalid= (c == "_" or ind == 0 and c.islower()))
 
         print(end=end)
 
-    def displayForeignKeyErrs(str, end="", showMsg = False):
-        if showMsg:
+    @staticmethod
+    def display_foreign_key_errs(foreign_key: str, end="", show_msg = False):
+        if show_msg:
             print("Invalid foreign key name: ", end="")
             
-        sufix = str[:-3] 
-        ArgsHandler.displayTableNameErrs(sufix)
+        sufix = foreign_key[:-3] 
+        ArgsHandler.display_table_name_errs(sufix)
 
         print("_id", end=end)
 
-    def displayColumnErrs(str, end="", showMsg = False):
-        if showMsg:
+    @staticmethod
+    def display_column_errs(column_name, end="", show_msg = False):
+        if show_msg:
             print("Invalid column name: ", end="")
 
-        for c in str:
-            ArgsHandler.printValidChar(c, isInvalid = (c.isupper()))
+        for c in column_name:
+            ArgsHandler.print_char(c, is_invalid= (c.isupper()))
 
         print(end=end)

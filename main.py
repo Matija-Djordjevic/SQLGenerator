@@ -1,7 +1,7 @@
 import sys
 import datetime
 import os
-import tools
+from tools import ArgsHandler as ah
 
 redundantArgs = ["", "\n", " "]
 gitHubLink = "https://github.com/Matija-Djordjevic/sql-table-generator"
@@ -22,8 +22,8 @@ if __name__=="__main__":
 
     inFileCont = inFile.read()
 
-    if tools.strContainsInvArgs(inFileCont.lower()):
-        logFile.write(f"Invalid keywords in 'in.txt' such as: {" ".join(tools.invalidArgs)}" + "\n\n")
+    if ah.strContainsInvArgs(inFileCont.lower()):
+        logFile.write(f"Invalid keywords in 'in.txt' such as: {" ".join(ah.invalidArgs)}" + "\n\n")
         print("Errors occurred, check 'log.txt' for more info!")
         exit()
     
@@ -31,17 +31,17 @@ if __name__=="__main__":
 
     tables = [_ for _ in filter(lambda x: x not in redundantArgs, tables)]
 
-    nameErrors = False
+    nameErrorsOccured = False
     for (ind, table) in enumerate(tables):
         tebleNameAndColumns = table.split(" ")
         tebleNameAndColumns = [_ for _ in filter(lambda x: x not in redundantArgs, tebleNameAndColumns)]
         
         tableName = tebleNameAndColumns[0]
-        if not tools.isValidTableNameArg(tableName):
-            nameErrors = True
-            tools.displayTableNameErrs(tableName, end="\n", showMsg=True)
+        if not ah.isValidTableNameArg(tableName):
+            nameErrorsOccured = True
+            ah.displayTableNameErrs(tableName, end="\n", showMsg=True)
             logFile.write(f"    Line {ind} ('in.txt'): Fixed table name: {tableName} -> ")
-            tableName = tools.fixTableNameArg(tableName)
+            tableName = ah.fixTableNameArg(tableName)
             logFile.write(f"{tableName}\n")
         
         columns = tebleNameAndColumns[1:]
@@ -51,20 +51,14 @@ if __name__=="__main__":
         
         # let us check and fix column/foreign key arguments
         for (ind, columnName) in enumerate(columns):
-            if tools.isForeignKeyArg(columnName):
-                if not tools.isValidForeignKeyArg(columnName):
-                    nameErrors = True
-                    tools.displayForeignKeyErrs(columnName, end="\n", showMsg=True)
-                    logFile.write(f"    Line {ind} ('in.txt'): Fixed foreign key name: {columnName} -> ")
-                    columns[ind] = tools.fixForeignKeyArg(columnName)
-                    logFile.write(f"{columnName}\n")
-            elif not tools.isValidColumnNameArg(columnName):
-                nameErrors = True
-                tools.displayColumnErrs(columnName, end="\n", showMsg=True)
-                logFile.write(f"    Line {ind} ('in.txt'): Fixed column name: {columnName} -> ")
-                columns[ind] = tools.fixColumnNameArg(columnName)
-                logFile.write(f"{columnName}\n")
-            
+            isKey = ah.isForeignKeyArg(columnName)
+            logFunct = ah.logForeignKeyErrsIfAny if isKey else ah.logColumnErrsIfAny
+            fixedName = logFunct(columnName, logFile, ind)
+
+            if fixedName != columnName:
+                nameErrorsOccured = True
+                columns[ind] = fixedName
+
         # section that writes SQL
         inSortedFile.write(tableName + (" " if columns != [] else ""))
         inSortedFile.write(" ".join(columns) + "\n")
@@ -75,7 +69,7 @@ if __name__=="__main__":
         sqlOutFile.write(f"    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP")
         sqlOutFile.write("\n" if len(columns) == 0 else ",\n")
         
-        areAnyArgsForeignKeys = len(list(filter(tools.isForeignKeyArg, columns))) >= 1
+        areAnyArgsForeignKeys = len(list(filter(ah.isForeignKeyArg, columns))) >= 1
         
         # we do not filter out foreign keys because they need to be present as a column names as well
         for ind, columnName in enumerate(columns):
@@ -103,7 +97,7 @@ if __name__=="__main__":
     
     logFile.write("\n") 
 
-    if nameErrors:
+    if nameErrorsOccured:
         print("\nDon't worry, names are fixed!")
     
     print("Check the 'log.txt' file for more info")

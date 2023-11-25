@@ -3,12 +3,8 @@ class ArgsHandler():
     Handle arguments that represent table names, column names and foreign key naems.
     Fix them, print their invalid characters or validate them.
     """
-    class TermColors:
-        FAIL = '\033[91m'
-        ENDC = '\033[0m'
-        BOLD = '\033[1m'
-
-    invalidArgs = [" created ", " modified "]
+    
+    INVALID_ARGS = [" created ", " modified "]
 
     @staticmethod
     def print_char(c, is_invalid = False):
@@ -20,7 +16,7 @@ class ArgsHandler():
     @staticmethod
     def contains_invalid_args(args: str):
         """" Samo da mu bude malo lakse """
-        for iArg in ArgsHandler.invalidArgs:
+        for iArg in ArgsHandler.INVALID_ARGS:
             if iArg in args:
                 return True
             
@@ -32,11 +28,14 @@ class ArgsHandler():
 
     @staticmethod
     def is_valid_foreign_key_arg(foreign_key: str):
-        return foreign_key[0].isupper() and "_" not in foreign_key[:-3]
+        before_id_part = foreign_key[:-3]
+        return foreign_key[0].isupper() and "_" not in before_id_part
     
     @staticmethod
-    def is_valid_primary_or_composite_key(composite_key: str):
-        return True
+    def is_valid_primary_or_composite_key(key_name: str):
+        if ArgsHandler.is_foreign_key_arg(key_name):
+            after_key_part = key_name[3:]
+            return ArgsHandler.is_valid_foreign_key_arg(after_key_part) 
     
     @staticmethod
     def is_valid_column_name_arg(column_name: str):
@@ -49,75 +48,66 @@ class ArgsHandler():
     @staticmethod
     def is_primary_or_composite_key(key_name: str):
         return key_name != "key_id" and key_name.startswith("key") and len(key_name) > 3
-
+    
     @staticmethod
-    def log_foreign_key_errs_if_any(key_name: str, log_file, line_ind= 0) -> str:
-        """ Also fixes the name and returns it """
-        fixed_name = key_name
-        if not ArgsHandler.is_valid_foreign_key_arg(key_name):
-            ArgsHandler.display_foreign_key_errs(key_name, end="\n", show_msg=True)
-            log_file.write(f"    Line {int(line_ind)} ('in.txt'): Fixed foreign key name: {key_name} -> ")
-            fixed_name = ArgsHandler.fix_foreign_key_arg(key_name)
+    def fix_column_name_arg(column_name: str, log_file, err_line_ind, print_to_log = True) -> str:
+        if print_to_log:
+            log_file.write(f"    Line {int(err_line_ind)} ('in.txt'): Fixed column name: {column_name} -> ")
+            
+        fixed_name = column_name.lower()
+        
+        if print_to_log:
             log_file.write(f"{fixed_name}\n")
 
         return fixed_name
-    
+
     @staticmethod
-    def log_primary_or_composite_key_errs(key_name: str, log_file, line_ind= 0) -> str:
-        fixed_name = key_name
+    def fix_foreign_key_arg(foreign_key_name: str, log_file, err_line_ind, print_to_log = True) -> str:
+        if print_to_log:
+            log_file.write(f"    Line {int(err_line_ind)} ('in.txt'): Fixed foreign key name: {foreign_key_name} -> ")
+        # TableName_id
+        beofre_id = foreign_key_name[:-3]
+        fixed_name = beofre_id.replace("_", "").capitalize() + "_id"
+        
+        if print_to_log:
+            log_file.write(f"{fixed_name}\n")
 
         return fixed_name
 
     @staticmethod
-    def log_column_errs_if_any(column_name: str, log_file, line_ind= 0) -> str:
-        """ Also fixes the name and returns it """
-        fixed_name = column_name
-        if not ArgsHandler.is_valid_column_name_arg(column_name):
-            ArgsHandler.display_column_errs(column_name, end="\n", show_msg=True)
-            log_file.write(f"    Line {int(line_ind)} ('in.txt'): Fixed column name: {column_name} -> ")
-            fixed_name = ArgsHandler.fix_column_name_arg(column_name)
-            log_file.write(f"{column_name}\n")
+    def fix_table_name_arg(table_name: str, log_file, err_line_ind) -> str:
+        log_file.write(f"    Line {int(err_line_ind)} ('in.txt'): Fixed table name: {table_name} -> ")
+        fixed_name = table_name.replace("_", "").capitalize()
+        log_file.write(f"{fixed_name}\n")
 
         return fixed_name
-
+        
     @staticmethod
-    def fix_column_name_arg(column_name: str) -> str:
-        return column_name.lower()
-
-    @staticmethod
-    def fix_foreign_key_arg(foreign_key: str) -> str:
-        return ArgsHandler.fix_table_name_arg(foreign_key[:-3]) + "_id"
-
-    @staticmethod
-    def fix_table_name_arg(table_name: str) -> str:
-        return table_name.replace("_", "").capitalize()
-    
-    @staticmethod
-    def display_table_name_errs(table_name: str, end="", show_msg = False):
-        if show_msg:
-            print("Invalid table name: ", end="")
-
-        for ind, c in enumerate(table_name):
-            ArgsHandler.print_char(c, is_invalid= (c == "_" or ind == 0 and c.islower()))
-
-        print(end=end)
-
-    @staticmethod
-    def display_foreign_key_errs(foreign_key: str, end="", show_msg = False):
-        if show_msg:
-            print("Invalid foreign key name: ", end="")
+    def fix_primary_or_composite_key(key_name: str, log_file, err_line_ind) -> str:
+        log_file.write(f"    Line {int(err_line_ind)} ('in.txt'): Fixed primary/column name: {key_name} -> ")
+        if ArgsHandler.is_foreign_key_arg(key_name):
+            # keyTableName_id
+            fixed_name = 'key' + ArgsHandler.fix_foreign_key_arg(key_name[3 : -3], log_file, err_line_ind, print_to_log = False) + '_id'
+        else:
+            # keycolumnname_id
+            fixed_name = ArgsHandler.fix_column_name_arg(key_name, log_file, err_line_ind, print_to_log = False)
             
-        sufix = foreign_key[:-3] 
-        ArgsHandler.display_table_name_errs(sufix)
-
-        print("_id", end=end)
-
+        log_file.write(f"{fixed_name}\n")
+        
+        return fixed_name
+    
     @staticmethod
-    def display_column_errs(column_name, end="", show_msg = False):
-        if show_msg:
-            print("Invalid column name: ", end="")
-
-        for c in column_name:
-            ArgsHandler.print_char(c, is_invalid= (c.isupper()))
-
-        print(end=end)
+    def fix_non_table_name_arg(arg_name: str, log_file, err_line_ind) -> str:
+        if (ArgsHandler.is_primary_or_composite_key(arg_name) 
+            and not ArgsHandler.is_valid_primary_or_composite_key(arg_name)):
+                return ArgsHandler.fix_primary_or_composite_key(arg_name, log_file, err_line_ind)
+            
+        elif (ArgsHandler.is_foreign_key_arg(arg_name)
+              and not ArgsHandler.is_valid_foreign_key_arg(arg_name)):
+                return ArgsHandler.fix_foreign_key_arg(arg_name, log_file, err_line_ind)
+            
+        elif not ArgsHandler.is_valid_column_name_arg(arg_name):
+                return ArgsHandler.fix_column_name_arg(arg_name, log_file, err_line_ind)
+        
+        return arg_name
+     

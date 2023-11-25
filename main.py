@@ -8,117 +8,121 @@ import datetime
 import os
 from tools import ArgsHandler as ah
 
-redundanat_args = ["", "\n", " "]
+REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
 
+def write_forign_key(foreign_key, sql_out_file):
+    foreign_table_name  = foreign_key[:-3]
+    foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
+    foreign_column_name = foreign_key.lower()
+    sql_out_file.write(f"    CONSTRAINT {foreign_key_name} FOREIGN KEY ({foreign_column_name}) REFERENCES {foreign_table_name}({foreign_column_name})")
+
 if __name__=="__main__":
+    log_file  = open("log.txt", "a", encoding="utf-8")
+    log_file.write(f"{datetime.datetime.now()}\n")
+    
     if not os.path.exists("in.txt"):
         open("in.txt", "w", encoding="utf-8")
+        log_file.write("Aborted: 'in.txt' file missing!\n\n\n")
         print(f"No 'in.txt' file!\nMade you one :)\nFor help, check:\n{GITHUB_LINK}")
         exit()
-
-    in_file = open("in.txt", "r", encoding="utf-8")
-
+        
     sql_out_file = open("create-db.sql", "w+", encoding="utf-8")
     sorted_in_file = open("sorted-in.txt", "w+", encoding="utf-8")
-    log_file  = open("log.txt", "a", encoding="utf-8")
-
-    log_file.write(f"{datetime.datetime.now()}" + "\n")
-
+    
+    in_file = open("in.txt", "r", encoding="utf-8")
     in_file_cont = in_file.read()
+    in_file.close()
 
     if ah.contains_invalid_args(in_file_cont.lower()):
-        log_file.write(f"Invalid keywords in 'in.txt' such as: {" ".join(ah.invalidArgs)}" + "\n\n")
+        log_file.write(f"Invalid keywords in 'in.txt' such as: {' '.join(ah.INVALID_ARGS)}" + "\n\n")
         print("Errors occurred, check 'log.txt' for more info!")
         exit()
     
+    # data curration
     tables = sorted(in_file_cont.split("\n"))
+    tables = [_ for _ in filter(lambda x: x not in REDUNDANT_ARGS, tables)]
 
-    tables = [_ for _ in filter(lambda x: x not in redundanat_args, tables)]
+    tables = [table.split(" ") for table in tables]
+    tables = [list(filter(lambda x: x not in REDUNDANT_ARGS, table)) for table in tables] 
 
-    naming_errs_occured = False
+    # name fixing
+    tables = [[ah.fix_table_name_arg(table[0], log_file, line_ind)] + [ah.fix_non_table_name_arg(non_table_arg, log_file, line_ind) for non_table_arg in table[1:]] for (line_ind, table) in enumerate(tables)]
+
     for (ind, table) in enumerate(tables):
-        table_name_and_columns = table.split(" ")
-        table_name_and_columns = [_ for _ in filter(lambda x: x not in redundanat_args, table_name_and_columns)]
-        
-        table_name = table_name_and_columns[0]
-        if not ah.is_valid_table_name(table_name):
-            naming_errs_occured = True
-            ah.display_table_name_errs(table_name, end="\n", show_msg=True)
-            log_file.write(f"    Line {ind} ('in.txt'): Fixed table name: {table_name} -> ")
-            table_name = ah.fix_table_name_arg(table_name)
-            log_file.write(f"{table_name}\n")
-        
-        columns = table_name_and_columns[1:]
 
+        columns = table[1:]
         # columns that end with _id last, rest sorted by alpha order
         columns = sorted(columns, key = lambda x : chr(sys.maxunicode) if x.endswith("_id") else x)
         
-        prims_and_comps = list(filter(ah.is_primary_or_composite_key, columns))
-
-        # let us check and fix column/foreign key arguments
-        for (ind, column_name) in enumerate(columns):
-            is_key = ah.is_foreign_key_arg(column_name)
-            log_funct = ah.log_foreign_key_errs_if_any if is_key else ah.log_column_errs_if_any
-            
-            fixed_name = log_funct(column_name, log_file, ind)
-
-            if fixed_name != column_name:
-                naming_errs_occured = True
-                columns[ind] = fixed_name
 
         # section that writes SQL
+        table_name = table[0]
         sorted_in_file.write(table_name + (" " if columns != [] else ""))
         sorted_in_file.write(" ".join(columns) + "\n")
 
         sql_out_file.write(f"CREATE TABLE {table_name} (\n")
 
 
-        if not len(prims_and_comps) >= 1:
+        primary_and_composite_keys  = list(filter(ah.is_primary_or_composite_key, columns))
+        should_generate_primary_key = len(primary_and_composite_keys) == 0
+        if should_generate_primary_key:
             sql_out_file.write(f"    {table_name.lower()}_id INTEGER PRIMARY KEY AUTOINCREMENT,\n")
 
         sql_out_file.write("    created TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,\n")
-        sql_out_file.write("    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,")
+        sql_out_file.write("    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP")
 
-        sql_out_file.write("\n" if len(columns) == 0 or len(prims_and_comps) >= 1 else ",\n")
-
-        are_any_args_foreign = len(list(filter(ah.is_foreign_key_arg, columns))) >= 1
+        querry_ends = len(columns) == []
+        if querry_ends:
+            sql_out_file.write("\n);\n")
+            continue
         
-        # we do not filter out foreign keys because they need to be present as a column names as well
-        for ind, column_name in enumerate(columns):
-            sql_out_file.write(f"    {column_name.lower()} INTEGER NOT NULL")
-
-            if are_any_args_foreign or ind != len(columns) - 1:
-                sql_out_file.write(",")
-
-            sql_out_file.write("\n")
+        sql_out_file.write(",\n")
+    
         
-        # SQL for composite keys
-        foreign_keys = list(filter(ah., columns))
-        for ind, foreign_key in enumerate(foreign_keys):
-            foreign_table_name  = foreign_key[:-3]
-            foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
-            foreign_column_name = foreign_key.lower()
+        # SQL for columns
+        for column_name in columns[1:]:
+            sql_out_file.write(f"    {column_name.lower()} INTEGER NOT NULL,\n")
             
-            sql_out_file.write(f"    CONSTRAINT {foreign_key_name} FOREIGN KEY ({foreign_column_name}) REFERENCES {foreign_table_name}({foreign_column_name})")
+        if columns != []:
+            sql_out_file.write(f"    {columns[-1].lower()} INTEGER NOT NULL")
 
-            if ind != len(foreign_keys) - 1:
-                sql_out_file.write(",")
+        foreign_keys = list(filter(ah.is_foreign_key_arg, columns))
+        querry_ends = foreign_keys == []
+        if querry_ends:
+            sql_out_file.write("\n);\n")
+            continue
 
-            sql_out_file.write("\n")
+        sql_out_file.write(",\n")
         
+        # SQL for foreign keys
+        for foreign_key in foreign_keys[:-1]:
+            write_forign_key(foreign_key, sql_out_file)
+            sql_out_file.write(",\n")
+
+        if foreign_keys != []:
+            write_forign_key(foreign_keys[-1], sql_out_file)
+
+
+        querry_ends = primary_and_composite_keys == []
+        if querry_ends:
+            sql_out_file.write("\n);\n")
+            continue
+        
+        sql_out_file.write(",\n")
 
         # now lets wirte primary or composite keys if user defined any 
-        if (len(prims_and_comps) >= 1):
-            sql_out_file.write(f"    PRIMARY KEY ({", ".join(map(lambda x: x[3: ], prims_and_comps))})\n")
+        if (primary_and_composite_keys != []):
+            sql_out_file.write(f"    PRIMARY KEY ({', '.join(map(lambda x: x[3: ], primary_and_composite_keys))})\n")
 
-
-        # end of SQL writing
+        # now query does end
         sql_out_file.write(");\n")
     
-    log_file.write("\n") 
+    sql_out_file.close()
 
-    if naming_errs_occured:
-        print("\nDon't worry, names are fixed!")
+    log_file.write("\n\n") 
+    log_file.close()
+
+    sorted_in_file.close()
     
-    print("Check the 'log.txt' file for more info")
+    print("Done, check the 'log.txt' file for more info!")

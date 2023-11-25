@@ -11,7 +11,7 @@ from tools import ArgsHandler as ah
 REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
 
-def write_forign_key(foreign_key, sql_out_file):
+def write_forign_key(foreign_key, table_name, sql_out_file):
     foreign_table_name  = foreign_key[:-3]
     foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
     foreign_column_name = foreign_key.lower()
@@ -91,10 +91,10 @@ if __name__=="__main__":
     
         
         # SQL for columns
-        for column_name in columns[1:]:
+        for column_name in columns[:-1]:
             sql_out_file.write(f"    {column_name.lower()} INTEGER NOT NULL,\n")
             
-        if columns != []:
+        if len(columns) >= 1:
             sql_out_file.write(f"    {columns[-1].lower()} INTEGER NOT NULL")
 
         foreign_keys = list(filter(ah.is_foreign_key_arg, columns))
@@ -107,11 +107,11 @@ if __name__=="__main__":
         
         # SQL for foreign keys
         for foreign_key in foreign_keys[:-1]:
-            write_forign_key(foreign_key, sql_out_file)
+            write_forign_key(foreign_key, table_name, sql_out_file)
             sql_out_file.write(",\n")
 
-        if foreign_keys != []:
-            write_forign_key(foreign_keys[-1], sql_out_file)
+        if len(foreign_keys) >= 1:
+            write_forign_key(foreign_keys[-1], table_name, sql_out_file)
 
 
         querry_ends = primary_and_composite_keys == []

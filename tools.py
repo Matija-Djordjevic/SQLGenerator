@@ -1,3 +1,10 @@
+from difflib import restore
+from lib2to3.pgen2.pgen import generate_grammar
+from multiprocessing import set_start_method
+from urllib.parse import _ResultMixinStr
+from xmlrpc.server import resolve_dotted_attribute
+
+
 class ArgsHandler():
     """
     Handle arguments that represent table names, column names and foreign key naems.
@@ -111,3 +118,87 @@ class ArgsHandler():
         
         return arg_name
      
+class SqlGenerator():
+    """ 
+    All methods assume that the provided arguments are of a valid format!
+    """
+    @staticmethod
+    def get_foreign_key_sql(key_name, table_name, end=""):
+        foreign_table_name  = key_name[:-3]
+        constraint_name     = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
+        foreign_column_name = key_name.lower()
+        
+        return f"    CONSTRAINT {constraint_name} FOREIGN KEY ({foreign_column_name}) REFERENCES {foreign_table_name}({foreign_column_name})" + end
+
+    @staticmethod
+    def get_table_name_sql(table_name, end = ""):
+        return f"CREATE TABLE {table_name} (" + end
+    
+    @staticmethod
+    def get_end_the_query():
+        return "\n);\n"
+    
+    @staticmethod
+    def get_end_query_or_new_line(query_ends):
+        if query_ends:
+            return SqlGenerator.get_end_the_query()
+        
+        return ",\n"  
+    
+    @staticmethod
+    def get_new_line():          
+        return ",\n"  
+    
+    @staticmethod
+    def get_default_key(table_name, end=""):
+        return f"    {table_name.lower()}_id INTEGER PRIMARY KEY AUTOINCREMENT" + end
+    
+    @staticmethod
+    def get_modified_column(end=""):
+        return "    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP" + end
+    
+    @staticmethod
+    def get_created_column(end=""):
+        return "    created TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP" + end
+        
+    @staticmethod
+    def get_column_name_sql(column_name, end=""):
+        return f"    {column_name.lower()} INTEGER NOT NULL" + end
+        
+    @staticmethod
+    def get_primary_slash_composite_keys_sql(key_name, end=""):
+        return f"    PRIMARY KEY ({', '.join(map(lambda x: x[3: ], key_name))})" + end
+
+    @staticmethod
+    def get_column_names_sql(column_names, end=""):
+        ret_str = ""
+        
+        if column_names == []:
+            return ret_str
+
+        if len(column_names) == 1:
+            return SqlGenerator.get_column_name_sql(column_names[0], end=end)
+        
+        for column_name in column_names[:-1]:
+            ret_str += SqlGenerator.get_column_name_sql(column_name, end=",\n")
+        
+        ret_str += SqlGenerator.get_column_name_sql(column_names[-1], end=end)
+
+        return ret_str
+    
+    @staticmethod
+    def get_foreign_keys_sql(key_names, table_name, end=""):
+        ret_str = ""
+
+        if key_names == []:
+            return ret_str
+
+        if len(key_names) == 1:
+            return SqlGenerator.get_foreign_key_sql(key_names[0], table_name, end=end)
+
+        for key_name in key_names[:-1]:
+            ret_str += SqlGenerator.get_foreign_key_sql(key_name, table_name, end=",")
+        
+        ret_str += SqlGenerator.get_foreign_key_sql(key_names[-1], table_name, end=end)
+
+        return ret_str

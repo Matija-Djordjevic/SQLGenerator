@@ -6,7 +6,9 @@ Documentation: https://github.com/Matija-Djordjevic/sql-table-generator
 import sys
 import datetime
 import os
+from tracemalloc import start
 from tools import ArgsHandler as ah
+from tools import SqlGenerator as gen
 
 REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
@@ -51,72 +53,46 @@ if __name__=="__main__":
 
     for (ind, table) in enumerate(tables):
 
+        table_name = table[0]
         columns = table[1:]
+        
         # columns that end with _id last, rest sorted by alpha order
         columns = sorted(columns, key = lambda x : chr(sys.maxunicode) if x.endswith("_id") else x)
         
-
-        # section that writes SQL
-        table_name = table[0]
-        sorted_in_file.write(table_name + (" " if columns != [] else ""))
-        sorted_in_file.write(" ".join(columns) + "\n")
-
-        sql_out_file.write(f"CREATE TABLE {table_name} (\n")
-
-
-        primary_and_composite_keys  = list(filter(ah.is_primary_or_composite_key, columns))
-        should_generate_primary_key = len(primary_and_composite_keys) == 0
-        if should_generate_primary_key:
-            sql_out_file.write(f"    {table_name.lower()}_id INTEGER PRIMARY KEY AUTOINCREMENT,\n")
-
-        sql_out_file.write("    created TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,\n")
-        sql_out_file.write("    modified TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP")
-
-        querry_ends = len(columns) == []
-        if querry_ends:
-            sql_out_file.write("\n);\n")
-            continue
-        
-        sql_out_file.write(",\n")
-    
-        
-        # SQL for columns
-        for column_name in columns[1:]:
-            sql_out_file.write(f"    {column_name.lower()} INTEGER NOT NULL,\n")
-            
-        if columns != []:
-            sql_out_file.write(f"    {columns[-1].lower()} INTEGER NOT NULL")
+        sorted_in_file.write(table_name
+                             + (" " + " ".join(columns)) if columns != [] else "" 
+                             + "\n")
 
         foreign_keys = list(filter(ah.is_foreign_key_arg, columns))
-        querry_ends = foreign_keys == []
-        if querry_ends:
-            sql_out_file.write("\n);\n")
-            continue
-
-        sql_out_file.write(",\n")
         
-        # SQL for foreign keys
-        for foreign_key in foreign_keys[:-1]:
-            write_forign_key(foreign_key, sql_out_file)
-            sql_out_file.write(",\n")
-
-        if foreign_keys != []:
-            write_forign_key(foreign_keys[-1], sql_out_file)
-
-
-        querry_ends = primary_and_composite_keys == []
-        if querry_ends:
-            sql_out_file.write("\n);\n")
-            continue
+        primary_and_composite_keys = list(filter(ah.is_primary_or_composite_key, columns))
         
-        sql_out_file.write(",\n")
+        sql_out_file.write(gen.get_table_name_sql(table_name, end="\n"))
 
-        # now lets wirte primary or composite keys if user defined any 
-        if (primary_and_composite_keys != []):
-            sql_out_file.write(f"    PRIMARY KEY ({', '.join(map(lambda x: x[3: ], primary_and_composite_keys))})\n")
+        have_primary_composite_and_keys = primary_and_composite_keys != []
+        have_foreign_keys = foreign_keys != []
+        have_columns = columns != []
 
-        # now query does end
-        sql_out_file.write(");\n")
+        if not have_primary_composite_and_keys:
+            sql_out_file.write(gen.get_default_key(table_name, gen.get_new_line()))
+        
+        sql_out_file.write(gen.get_created_column(gen.get_new_line()))
+        
+        sql_out_file.write(gen.get_modified_column(gen.get_end_query_or_new_line(columns == [])))
+        
+        if have_columns:
+                sql_out_file.write(gen.get_column_names_sql(columns,
+                                                            gen.get_end_query_or_new_line(not have_foreign_keys and 
+                                                                                          not primary_and_composite_keys)))
+
+        if have_foreign_keys:
+                sql_out_file.write(gen.get_foreign_keys_sql(foreign_keys,
+                                                            table_name,
+                                                            gen.get_end_query_or_new_line(not have_primary_composite_and_keys)))
+        
+        if have_primary_composite_and_keys:
+                sql_out_file.write(gen.get_primary_slash_composite_keys_sql(primary_and_composite_keys,
+                                                                            gen.get_end_the_query()))
     
     sql_out_file.close()
 

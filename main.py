@@ -13,7 +13,7 @@ from tools import SqlGenerator as gen
 REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
 
-def write_forign_key(foreign_key, sql_out_file):
+def write_forign_key(foreign_key, table_name, sql_out_file):
     foreign_table_name  = foreign_key[:-3]
     foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
     foreign_column_name = foreign_key.lower()
@@ -42,14 +42,24 @@ if __name__=="__main__":
         exit()
     
     # data curration
-    tables = sorted(in_file_cont.split("\n"))
-    tables = [_ for _ in filter(lambda x: x not in REDUNDANT_ARGS, tables)]
+    lines = in_file_cont.split("\n")
+    
+    def can_represent_table(line: str):
+        return line not in REDUNDANT_ARGS
+    tables = list(filter(can_represent_table, lines))
+
+    tables = sorted(tables)
 
     tables = [table.split(" ") for table in tables]
-    tables = [list(filter(lambda x: x not in REDUNDANT_ARGS, table)) for table in tables] 
+
+    def can_represent_column(table: str):
+        return table not in REDUNDANT_ARGS
+    tables = [list(filter(can_represent_column, table)) for table in tables] 
 
     # name fixing
-    tables = [[ah.fix_table_name_arg(table[0], log_file, line_ind)] + [ah.fix_non_table_name_arg(non_table_arg, log_file, line_ind) for non_table_arg in table[1:]] for (line_ind, table) in enumerate(tables)]
+    fix_table     = ah.fix_table_name_arg
+    fix_non_table = ah.fix_non_table_name_arg
+    tables = [[fix_table(table[0], log_file, line_ind)] + [fix_non_table(non_table_arg, log_file, line_ind) for non_table_arg in table[1:]] for (line_ind, table) in enumerate(tables)]
 
     for (ind, table) in enumerate(tables):
 
@@ -96,7 +106,7 @@ if __name__=="__main__":
     
     sql_out_file.close()
 
-    log_file.write("\n\n") 
+    log_file.write("\n\n")
     log_file.close()
 
     sorted_in_file.close()

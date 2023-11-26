@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# Except
+!.gitignore
+!main.py
+!tool.py
+!README.md

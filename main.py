@@ -13,12 +13,6 @@ from tools import SqlGenerator as gen
 REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
 
-def write_forign_key(foreign_key, table_name, sql_out_file):
-    foreign_table_name  = foreign_key[:-3]
-    foreign_key_name    = f"{table_name.lower()}_{foreign_table_name.lower()}_fk"
-    foreign_column_name = foreign_key.lower()
-    sql_out_file.write(f"    CONSTRAINT {foreign_key_name} FOREIGN KEY ({foreign_column_name}) REFERENCES {foreign_table_name}({foreign_column_name})")
-
 if __name__=="__main__":
     log_file  = open("log.txt", "a", encoding="utf-8")
     log_file.write(f"{datetime.datetime.now()}\n")

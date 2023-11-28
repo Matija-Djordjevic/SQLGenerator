@@ -18,11 +18,11 @@ Additionally, you can now check the `sorted-in.txt` file. It contains the sorted
 ### Arguments naming
 >  
 > * `table name` arguments: <br>
-Every line must start with one and contain only one. These arguments must be capitalized and can contain small and capital letters, as well as digits. <br>
+Every line must start with one and contain only one. These arguments must be capitalized and can contain small and capital letters, as well as digits. <br><br> 
 > * `column` arguments: <br> 
-They can contain small letters, digits and `'_'` symbols. They represent the column name of the table, and will be assigned an INTEGER data type in the table. <br>
+They can contain small letters, digits and `'_'` symbols. They represent the column name of the table, and will be assigned an INTEGER data type in the table. <br><br> 
 > * `foreign key` arguments: <br>
-These arguments must end with an `"_id"` suffix. They must be capitalized and can contain small and capital letters, as well as digits, same as for `table name` argument. The part before the `"_id"` should reference a table name. After the SQL is generated, the table (`TableName`) will have a foreign key `foreigntablename_id` pointing to a column `foreigntablename_id` of the `ForeignTableName` table. <br>
+These arguments must end with an `"_id"` suffix. The part before the `"_id"` should reference an existing table, and follow the naiming rules for `table name` arguments.<br><br> 
 > * `primary/foreign key` arguments: <br>
 A `primary/foreign key` argument must start with a `"key"` prefix. <br>
 

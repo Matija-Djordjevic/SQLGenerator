@@ -2,13 +2,14 @@
 Module for generating SQL for creating new tables in SQLite
 Documentation: https://github.com/Matija-Djordjevic/sql-table-generator
 """
-
 import sys
 import datetime
 import os
-from tracemalloc import start
-from tools import ArgsHandler as ah
-from tools import SqlGenerator as gen
+
+from tools import ArgsTypeChecker as checker 
+from tools import ArgsFixer as fixer
+from tools import ArgsValidator as validator
+from tools import SqliteGenerator as generator
 
 REDUNDANT_ARGS = ["", "\n", " "]
 GITHUB_LINK = "https://github.com/Matija-Djordjevic/sql-table-generator"
@@ -30,8 +31,8 @@ if __name__=="__main__":
     in_file_cont = in_file.read()
     in_file.close()
 
-    if ah.contains_invalid_args(in_file_cont.lower()):
-        log_file.write(f"Invalid keywords in 'in.txt' such as: {' '.join(ah.INVALID_ARGS)}" + "\n\n")
+    if validator.contains_invalid_args(in_file_cont.lower().split("\n")):
+        log_file.write(f"Invalid keywords in 'in.txt' such as: {' '.join(validator.INVALID_ARGS)}" + "\n\n")
         print("Errors occurred, check 'log.txt' for more info!")
         exit()
     
@@ -51,8 +52,8 @@ if __name__=="__main__":
     tables = [list(filter(can_represent_column, table)) for table in tables] 
 
     # name fixing
-    fix_table     = ah.fix_table_name_arg
-    fix_non_table = ah.fix_non_table_name_arg
+    fix_table     = fixer.fix_table_name_arg
+    fix_non_table = fixer.fix_non_table_name_arg
     tables = [[fix_table(table[0], log_file, line_ind)] + [fix_non_table(non_table_arg, log_file, line_ind) for non_table_arg in table[1:]] for (line_ind, table) in enumerate(tables)]
 
     for (ind, table) in enumerate(tables):
@@ -67,36 +68,36 @@ if __name__=="__main__":
                              + (" " + " ".join(columns)) if columns != [] else "" 
                              + "\n")
 
-        foreign_keys = list(filter(ah.is_foreign_key_arg, columns))
+        foreign_keys = list(filter(checker.is_foreign_key_arg, columns))
         
-        primary_and_composite_keys = list(filter(ah.is_primary_or_composite_key, columns))
+        primary_and_composite_keys = list(filter(checker.is_primary_or_composite_key, columns))
         
-        sql_out_file.write(gen.get_table_name_sql(table_name, end="\n"))
+        sql_out_file.write(generator.get_table_name_sql(table_name, end="\n"))
 
         have_primary_composite_and_keys = primary_and_composite_keys != []
         have_foreign_keys = foreign_keys != []
         have_columns = columns != []
 
         if not have_primary_composite_and_keys:
-            sql_out_file.write(gen.get_default_key(table_name, gen.get_new_line()))
+            sql_out_file.write(generator.get_default_key_sql(table_name, generator.get_new_line_sql()))
         
-        sql_out_file.write(gen.get_created_column(gen.get_new_line()))
+        sql_out_file.write(generator.get_created_column_sql(generator.get_new_line_sql()))
         
-        sql_out_file.write(gen.get_modified_column(gen.get_end_query_or_new_line(columns == [])))
+        sql_out_file.write(generator.get_modified_column_sql(generator.get_end_query_or_new_line_sql(columns == [])))
         
         if have_columns:
-                sql_out_file.write(gen.get_column_names_sql(columns,
-                                                            gen.get_end_query_or_new_line(not have_foreign_keys and 
-                                                                                          not primary_and_composite_keys)))
+            sql_out_file.write(generator.get_column_names_sql(columns,
+                                                              generator.get_end_query_or_new_line_sql(not have_foreign_keys and
+                                                                                                      not primary_and_composite_keys)))
 
         if have_foreign_keys:
-                sql_out_file.write(gen.get_foreign_keys_sql(foreign_keys,
-                                                            table_name,
-                                                            gen.get_end_query_or_new_line(not have_primary_composite_and_keys)))
+            sql_out_file.write(generator.get_foreign_keys_sql(foreign_keys,
+                                                              table_name,
+                                                              generator.get_end_query_or_new_line_sql(not have_primary_composite_and_keys)))
         
         if have_primary_composite_and_keys:
-                sql_out_file.write(gen.get_primary_slash_composite_keys_sql(primary_and_composite_keys,
-                                                                            gen.get_end_the_query()))
+            sql_out_file.write(generator.get_primary_slash_composite_keys_sql(primary_and_composite_keys,
+                                                                              generator.get_end_the_query_sql()))
     
     sql_out_file.close()
 

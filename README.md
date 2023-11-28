@@ -22,7 +22,7 @@ Every line must start with one and contain only one. These arguments must be cap
 > * `column` arguments: <br> 
 They can contain small letters, digits and `'_'` symbols. They represent the column name of the table, and will be assigned an INTEGER data type in the table. <br><br> 
 > * `foreign key` arguments: <br>
-These arguments must end with an `"_id"` suffix. The part before the `"_id"` should reference an existing table, and follow the naiming rules for `table name` arguments.<br><br> 
+These arguments must end with a `"_id"` suffix. The part before the `"_id"` should reference an existing table, and follow the naiming rules for `table name` arguments.<br><br> 
 > * `primary/foreign key` arguments: <br>
 A `primary/foreign key` argument must start with a `"key"` prefix. <br>
 

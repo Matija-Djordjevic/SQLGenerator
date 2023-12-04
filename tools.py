@@ -140,6 +140,9 @@ class SqliteGenerator():
         
     @staticmethod
     def get_column_name_sql(column_name, end=""):
+        if ArgsTypeChecker.is_primary_or_composite_key(column_name):
+            column_name = column_name[3:]
+
         return f"    {column_name.lower()} INTEGER NOT NULL" + end
         
     @staticmethod
